@@ -1,0 +1,28 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # If you have a build step (static site generator), run it here and output to 'docs' or 'public'.
+      # For this repository we already have static files in docs/ so no build step is needed.
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'docs'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
