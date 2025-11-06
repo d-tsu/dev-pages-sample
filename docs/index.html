@@ -27,6 +27,95 @@
         </ol>
       </section>
 
+      <section style="margin-top:1rem;" class="card">
+        <h2>ボタン一覧（要件）</h2>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          <button id="alertBtn">アラートダイアログを出す</button>
+
+          <button id="downloadDirectBtn">ファイルダウンロード（そのまま保存）</button>
+
+          <button id="downloadSaveAsBtn">ファイルダウンロード（名前をつけて保存）</button>
+
+          <button id="showTextBtn">ボタンを押すと文言が表示される（アラートではない）</button>
+        </div>
+
+        <div id="message" style="margin-top:1rem;padding:0.75rem;border:1px dashed #ddd;display:none;background:#fafafa;
+        border-radius:6px;color:#111;"></div>
+
+        <script>
+          // アラートを表示
+          document.getElementById('alertBtn').addEventListener('click', function(){
+            alert('これはアラートダイアログです。');
+          });
+
+          // 空ファイルの Blob を作成するユーティリティ
+          function makeEmptyBlob(){
+            return new Blob([''], {type: 'application/octet-stream'});
+          }
+
+          // そのまま保存（ブラウザの振る舞いにより必ずしも“保存先指定なし”にはなりませんが、
+          // download 属性でファイル名を指定して自動的にダウンロードを開始します）
+          document.getElementById('downloadDirectBtn').addEventListener('click', function(){
+            const blob = makeEmptyBlob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            // 提案されるファイル名（各ブラウザはダイアログ挙動が異なります）
+            a.download = 'empty.txt';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showMessage('空ファイルをダウンロードしました（empty.txt）。');
+          });
+
+          // 名前をつけて保存 - File System Access API を優先で利用し、なければ download 属性のフォールバック
+          document.getElementById('downloadSaveAsBtn').addEventListener('click', async function(){
+            const blob = makeEmptyBlob();
+
+            if (window.showSaveFilePicker) {
+              try {
+                const handle = await window.showSaveFilePicker({
+                  suggestedName: 'my-empty-file.txt',
+                  types: [{description: 'Text', accept: {'text/plain': ['.txt']}}]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                showMessage('保存しました：' + (handle.name || '（選択済みのファイル）'));
+                return;
+              } catch (err) {
+                // ユーザーがキャンセルした場合などは fallthrough
+                console.warn('showSaveFilePicker canceled or failed:', err);
+              }
+            }
+
+            // フォールバック
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            // フォールバックでも download 属性にファイル名を指定しておく
+            a.download = 'my-empty-file.txt';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showMessage('（フォールバック）空ファイルをダウンロードしました（my-empty-file.txt）。');
+          });
+
+          // ボタンを押すと適当な文言が表示される（アラートではない）
+          document.getElementById('showTextBtn').addEventListener('click', function(){
+            showMessage('ボタンが押されました — ここに任意の文言を表示しています。');
+          });
+
+          function showMessage(text){
+            const el = document.getElementById('message');
+            el.style.display = 'block';
+            el.textContent = text;
+          }
+        </script>
+      </section>
+
       <section style="margin-top:1rem;">
         <h3>サンプルリンク</h3>
         <ul>
