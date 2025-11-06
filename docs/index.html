@@ -73,34 +73,27 @@
           document.getElementById('downloadSaveAsBtn').addEventListener('click', async function(){
             const blob = makeEmptyBlob();
 
-            if (window.showSaveFilePicker) {
-              try {
-                const handle = await window.showSaveFilePicker({
-                  suggestedName: 'my-empty-file.txt',
-                  types: [{description: 'Text', accept: {'text/plain': ['.txt']}}]
-                });
-                const writable = await handle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                showMessage('保存しました：' + (handle.name || '（選択済みのファイル）'));
-                return;
-              } catch (err) {
-                // ユーザーがキャンセルした場合などは fallthrough
-                console.warn('showSaveFilePicker canceled or failed:', err);
+              if (window.showSaveFilePicker) {
+                try {
+                  const handle = await window.showSaveFilePicker({
+                    suggestedName: 'my-empty-file.txt',
+                    types: [{description: 'Text', accept: {'text/plain': ['.txt']}}]
+                  });
+                  const writable = await handle.createWritable();
+                  await writable.write(blob);
+                  await writable.close();
+                  showMessage('保存しました：' + (handle.name || '（選択済みのファイル）'));
+                  return;
+                } catch (err) {
+                  // ユーザーがキャンセルした場合は何もしない（フォールバックは行わない）
+                  console.warn('showSaveFilePicker canceled or failed:', err);
+                  showMessage('保存をキャンセルしました。');
+                  return;
+                }
               }
-            }
 
-            // フォールバック
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            // フォールバックでも download 属性にファイル名を指定しておく
-            a.download = 'my-empty-file.txt';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            showMessage('（フォールバック）空ファイルをダウンロードしました（my-empty-file.txt）。');
+              // File System Access API が未対応の場合は、フォールバックしないで通知のみ
+              showMessage('このブラウザは名前を付けて保存をサポートしていません。');
           });
 
           // ボタンを押すと適当な文言が表示される（アラートではない）
